@@ -1,0 +1,104 @@
+<configuration>
+
+    <timestamp key="BY_DATE" datePattern="yyyy-mm-dd" />
+    <!--
+        4relative: 네 자리의 milliseconds
+        %highlight(%-5level): 상위 1 level ~ 5 level 까지 highlight 적용 (6 level: DEBUG
+        [%C.%M:%line]: Class-Method-몇 번째 line 에서 출력
+        %msg%n: 내용, 줄바꿈
+    -->
+    <property name="LOG_PATTERN"
+              value="[%d{yyyy-MM-dd HH:mm:ss}:%-4relative] %green([%thread]) %highlight(%-5level) [%C.%M:%line] - %msg%n" />
+
+    <springProfile name="!prod">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>${LOG_PATTERN}</pattern>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+        </root>
+    </springProfile>
+
+    <springProfile name="prod">
+        <appender name="FILE-INFO" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>./logs/cumfa/scheduler-info-${BY_DATE}.log</file>
+            <filter class="ch.qos.logback.classic.filter.LevelFilter">
+                <level>INFO</level>
+                <onMatch>ACCEPT</onMatch> <!-- level 에 적용된 값에 매치될 때 출력 여부 -->
+                <onMismatch>DENY</onMismatch> <!-- 위 와 동일한 조건에 매치되지 않을 때 -->
+            </filter>
+            <encoder>
+                <pattern>${LOG_PATTERN}</pattern>
+            </encoder>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>./logs/cufma/backup/scheduler-info-%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+                <!--
+                    log file 의 용량이 100MB 를 넘으면 해당 파일을 <fileNamePattern> 적용한 값으로 압축
+                    압축 후 기존 log file 을 삭제하고 동일한 이름의 log 파일 재생성
+                -->
+                <maxFileSize>100MB</maxFileSize>
+                <!-- 입력 값 Month 기준으로 해당 기간이 지나면 오래된 순으로 삭제 -->
+                <maxHistory>30</maxHistory>
+                <!--
+                    maxHistory 와 같이 설정해야 하며 크기가 오바되면 오래된 순으로 압축파일 제거
+                    maxHistory 제한이 먼저 적용된 후 totalSizeCap 제한이 두 번째로 적용
+                -->
+                <totalSizeCap>3GB</totalSizeCap>
+            </rollingPolicy>
+        </appender>
+
+        <appender name="FILE-WARN" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>./logs/cufma/scheduler-warn-${BY_DATE}.log</file>
+            <filter class="ch.qos.logback.classic.filter.LevelFilter">
+                <level>WARN</level>
+                <onMatch>ACCEPT</onMatch>
+                <onMismatch>DENY</onMismatch>
+            </filter>
+            <encoder>
+                <pattern>${LOG_PATTERN}</pattern>
+            </encoder>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>./logs/cufma/backup/scheduler-warn-%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+                <maxFileSize>100MB</maxFileSize>
+                <maxHistory>30</maxHistory>
+                <totalSizeCap>3GB</totalSizeCap>
+            </rollingPolicy>
+        </appender>
+
+        <appender name="FILE-ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>./logs/cufma/error/scheduler-error-${BY_DATE}.log</file>
+            <filter class="ch.qos.logback.classic.filter.LevelFilter">
+                <level>ERROR</level>
+                <onMatch>ACCEPT</onMatch>
+                <onMismatch>DENY</onMismatch>
+            </filter>
+            <encoder>
+                <pattern>${LOG_PATTERN}</pattern>
+            </encoder>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>./logs/cufma/backup/scheduler-error-%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+                <maxFileSize>100MB</maxFileSize>
+                <maxHistory>30</maxHistory>
+                <totalSizeCap>3GB</totalSizeCap>
+            </rollingPolicy>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="FILE-INFO" />
+            <appender-ref ref="FILE-WARN" />
+            <appender-ref ref="FILE-ERROR" />
+        </root>
+    </springProfile>
+
+    <logger name="jdbc" level="OFF"/>
+    <logger name="jdbc.sqlonly" level="OFF"/>
+    <logger name="jdbc.sqltiming" level="DEBUG"/>
+    <logger name="jdbc.audit" level="OFF"/>
+    <logger name="jdbc.resultset" level="OFF"/>
+    <logger name="jdbc.resultsettable" level="DEBUG"/>
+    <logger name="jdbc.connection" level="OFF"/>
+
+</configuration>

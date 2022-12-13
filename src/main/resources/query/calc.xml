@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cubox.aero.cmfa.scheduler.repository.CalcRepository">
+    <select id="srvDtlList"
+            parameterType="CustomerServDtl"
+            resultType="CustomerServDtl">
+        SELECT
+            c.id_customer,
+            c.customer_name,
+            s.id_serv,
+            s.serv_type,
+            s.serv_name,
+            csd.calc_date,
+            csd.calc_cycle,
+            csd.pay_type,
+            csd.pay_value,
+            csd.serv_exp,
+            csd.use_count,
+            csd.max_count,
+            csd.use_yn,
+            DATE_FORMAT(csd.start_date, '%Y-%m-%dT%T') AS startDate,
+            DATE_FORMAT(csd.register_date, '%Y-%m-%dT%T') AS registerDate,
+            DATE_FORMAT(csd.update_date, '%Y-%m-%dT%T') AS updateDate
+        FROM customer_serv_dtl csd
+                LEFT JOIN customer c on csd.id_customer = c.id_customer
+                LEFT JOIN serv s on csd.id_serv = s.id_serv
+        WHERE 1=1
+        <if test='useYn != "A"'>
+            AND csd.use_yn = #{useYn}
+        </if>
+        <if test='idCustomer != null and idCustomer != ""'>
+            AND csd.id_customer = #{idCustomer}
+        </if>
+        ORDER BY csd.register_date DESC
+    </select>
+
+    <update id="updateCstSrvDtl"
+            parameterType="CustomerServDtl">
+        UPDATE customer_serv_dtl
+        SET
+            use_yn = #{useYn},
+            update_date = now()
+        WHERE id_customer = #{idCustomer}
+          AND id_serv = #{idServ}
+    </update>
+
+    <insert id="insertCalc"
+            parameterType="Calc">
+        INSERT INTO calc (
+                          id_customer,
+                          id_serv,
+                          use_price,
+                          use_date,
+                          use_yn,
+                          register_date,
+                          update_date
+        )
+        values (
+                #{idCustomer},
+                #{idServ},
+                #{usePrice},
+                #{useDate},
+                'N',
+                now(),
+                now()
+        )
+    </insert>
+
+    <select id="getSuccessTransaction"
+            parameterType="CustomerTransaction"
+            resultType="int">
+        SELECT
+            count(al.success_yn)
+        FROM api_log al
+        WHERE al.success_yn = 'Y'
+          AND al.id_customer = #{idCustomer}
+          AND al.id_serv = #{idServ}
+          AND DATE_FORMAT(al.register_date, '%Y-%m-%d') BETWEEN #{transactionStartDate} AND #{transactionEndDate}
+    </select>
+</mapper>
